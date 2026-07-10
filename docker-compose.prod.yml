@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: streaminsight_user
+      POSTGRES_PASSWORD: secure_password_here
+      POSTGRES_DB: streaminsight_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - streaminsight-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - streaminsight-network
+
+  backend:
+    build: 
+      context: ./backend
+    restart: always
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://streaminsight_user:secure_password_here@db:5432/streaminsight_prod
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - SECRET_KEY=your_production_secret_key
+      - OPENAI_API_KEY=your_openai_key
+      - STRIPE_SECRET_KEY=your_stripe_key
+    volumes:
+      - uploads_data:/tmp/streaminsight_uploads
+    networks:
+      - streaminsight-network
+    ports:
+      - "8000:8000"
+
+  celery_worker:
+    build:
+      context: ./backend
+    restart: always
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://streaminsight_user:secure_password_here@db:5432/streaminsight_prod
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - uploads_data:/tmp/streaminsight_uploads
+    networks:
+      - streaminsight-network
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - streaminsight-network
+
+volumes:
+  postgres_data:
+  uploads_data:
+networks:
+  streaminsight-network:
