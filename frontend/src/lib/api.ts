@@ -2,8 +2,17 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const getBaseUrl = () => {
-  const rawUrl = import.meta.env.VITE_API_URL;
+  let rawUrl = import.meta.env.VITE_API_URL;
   if (!rawUrl) return '/api/v1';
+  
+  // Clean up the URL just in case the user pasted it with trailing slashes
+  rawUrl = rawUrl.replace(/\/+$/, '');
+  
+  // If the user accidentally included /api/v1 in their env variable, strip it
+  if (rawUrl.endsWith('/api/v1')) {
+    rawUrl = rawUrl.slice(0, -7);
+  }
+
   // If Render passes just the host (e.g. saas-backend.onrender.com), prepend https://
   const url = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
   return `${url}/api/v1`;
