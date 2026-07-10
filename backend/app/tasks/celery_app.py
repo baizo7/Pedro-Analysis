@@ -1,8 +1,15 @@
-from celery import Celery
 import os
+from celery import Celery
 
-# Ensure the backend is run with correct env vars, defaulting to local docker-compose redis
 REDIS_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+
+# Upstash/serverless Redis instances using rediss:// require specific SSL configurations in Celery
+broker_use_ssl = None
+if REDIS_URL.startswith("rediss://"):
+    import ssl
+    broker_use_ssl = {
+        'ssl_cert_reqs': ssl.CERT_NONE
+    }
 
 celery_app = Celery(
     "streaminsight_tasks",
@@ -17,4 +24,6 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    broker_use_ssl=broker_use_ssl,
+    redis_backend_use_ssl=broker_use_ssl
 )

@@ -42,7 +42,18 @@ async def upload_dataset(
         shutil.copyfileobj(file.file, buffer)
 
     # Trigger Celery Task
-    process_dataset.delay(str(dataset.id), file_path)
+    try:
+        process_dataset.delay(str(dataset.id), file_path)
+    except Exception as e:
+        # If Celery fails to connect to Upstash Redis, clean up the DB record and return a clear error
+        db.delete(dataset)
+        db.commit()
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=503, 
+            detail="Failed to connect to background worker queue (Upstash Redis). Please check your REDIS_URL."
+        )
 
     return dataset
 
