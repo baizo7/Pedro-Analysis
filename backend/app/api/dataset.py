@@ -52,7 +52,7 @@ async def upload_dataset(
             os.remove(file_path)
         raise HTTPException(
             status_code=503, 
-            detail="Failed to connect to background worker queue (Upstash Redis). Please check your REDIS_URL."
+            detail=f"Failed to connect to background worker queue (Upstash Redis). Error details: {str(e)}"
         )
 
     return dataset
