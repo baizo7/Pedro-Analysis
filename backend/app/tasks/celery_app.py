@@ -1,8 +1,12 @@
 import os
 from celery import Celery
 
-# Strip leading/trailing spaces and quotes in case of accidental copy-paste errors
-REDIS_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0").strip().strip('"').strip("'")
+# Get URLs and strip whitespace/quotes
+celery_url = os.getenv("CELERY_BROKER_URL", "").strip().strip('"').strip("'")
+fallback_url = os.getenv("REDIS_URL", "").strip().strip('"').strip("'")
+
+# Bulletproof fallback logic: Use CELERY_BROKER_URL, then REDIS_URL, then localhost
+REDIS_URL = celery_url if celery_url else (fallback_url if fallback_url else "redis://localhost:6379/0")
 
 # Auto-correct Upstash URLs to use SSL scheme if user accidentally pasted redis://
 if "upstash.io" in REDIS_URL and REDIS_URL.startswith("redis://"):
