@@ -15,5 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# Run the API
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Make the start script executable
+RUN chmod +x start.sh
+
+# Run the startup script (starts both Celery and FastAPI)
+CMD ["./start.sh"]
