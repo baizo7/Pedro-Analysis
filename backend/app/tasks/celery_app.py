@@ -18,6 +18,12 @@ elif "redis://" in REDIS_URL and not REDIS_URL.startswith("redis://"):
 if "upstash.io" in REDIS_URL and REDIS_URL.startswith("redis://"):
     REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
 
+# CRITICAL FIX: Celery natively reads CELERY_BROKER_URL from the OS environment, 
+# completely ignoring the 'broker=REDIS_URL' argument below if the env var is set.
+# We MUST overwrite the OS environment variables with our cleaned/extracted URL!
+os.environ["CELERY_BROKER_URL"] = REDIS_URL
+os.environ["REDIS_URL"] = REDIS_URL
+
 # Upstash/serverless Redis instances using rediss:// require specific SSL configurations in Celery
 broker_use_ssl = None
 if REDIS_URL.startswith("rediss://"):
