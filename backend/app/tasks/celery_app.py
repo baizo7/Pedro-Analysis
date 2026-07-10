@@ -1,7 +1,8 @@
 import os
 from celery import Celery
 
-REDIS_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+# Strip leading/trailing spaces and quotes in case of accidental copy-paste errors
+REDIS_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0").strip().strip('"').strip("'")
 
 # Auto-correct Upstash URLs to use SSL scheme if user accidentally pasted redis://
 if "upstash.io" in REDIS_URL and REDIS_URL.startswith("redis://"):
