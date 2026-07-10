@@ -8,6 +8,12 @@ fallback_url = os.getenv("REDIS_URL", "").strip().strip('"').strip("'")
 # Bulletproof fallback logic: Use CELERY_BROKER_URL, then REDIS_URL, then localhost
 REDIS_URL = celery_url if celery_url else (fallback_url if fallback_url else "redis://localhost:6379/0")
 
+# If the user accidentally pasted the entire 'redis-cli' command instead of just the URL, extract the URL
+if "rediss://" in REDIS_URL and not REDIS_URL.startswith("rediss://"):
+    REDIS_URL = "rediss://" + REDIS_URL.split("rediss://")[1].split(" ")[0]
+elif "redis://" in REDIS_URL and not REDIS_URL.startswith("redis://"):
+    REDIS_URL = "redis://" + REDIS_URL.split("redis://")[1].split(" ")[0]
+
 # Auto-correct Upstash URLs to use SSL scheme if user accidentally pasted redis://
 if "upstash.io" in REDIS_URL and REDIS_URL.startswith("redis://"):
     REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
